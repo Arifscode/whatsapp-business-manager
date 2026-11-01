@@ -1,0 +1,29 @@
+{
+  "name": "whatsapp-business-manager",
+  "version": "1.0.0",
+  "description": "WhatsApp Small Business Manager - ladies accessories shop management",
+  "private": true,
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=server\" \"npm run dev --workspace=client\"",
+    "dev:server": "npm run dev --workspace=server",
+    "dev:client": "npm run dev --workspace=client",
+    "build": "npm run build --workspace=client",
+    "seed": "npm run seed --workspace=server",
+    "db:migrate": "npm run db:migrate --workspace=server",
+    "db:generate": "npm run db:generate --workspace=server"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "allowScripts": {
+    "prisma@5.7.1": true,
+    "@prisma/engines@5.7.1": true,
+    "@prisma/client@5.7.1": true,
+    "core-js@3.51.0": true,
+    "esbuild@0.19.12": true
+  }
+}

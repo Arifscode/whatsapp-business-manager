@@ -1,0 +1,153 @@
+// WhatsApp Business Manager - Prisma Schema
+// SQLite database for simple local/hosted deployment
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Product ───────────────────────────────────────────────────────────────
+
+model Product {
+  id           Int              @id @default(autoincrement())
+  name         String
+  category     String
+  description  String?
+  buyingPrice  Float
+  sellingPrice Float
+  stockQty     Int              @default(0)
+  imageUrl     String?
+  isUnique     Boolean          @default(false)
+  isActive     Boolean          @default(true)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  variants     ProductVariant[]
+  orderItems   OrderItem[]
+}
+
+model ProductVariant {
+  id          Int      @id @default(autoincrement())
+  productId   Int
+  name        String
+  stockQty    Int      @default(0)
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  product     Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems  OrderItem[]
+}
+
+// ─── Order ─────────────────────────────────────────────────────────────────
+
+model Order {
+  id              Int          @id @default(autoincrement())
+  customerName    String
+  customerPhone   String
+  deliveryAddress String
+  notes           String?
+  internalNotes   String?
+  status          String       @default("PENDING")
+  source          String       @default("MANUAL")
+  shippingCost    Float?
+  totalAmount     Float?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  items           OrderItem[]
+  batchOrders     DispatchBatchOrder[]
+  packagingUsages PackagingUsage[]
+}
+
+model OrderItem {
+  id           Int     @id @default(autoincrement())
+  orderId      Int
+  productId    Int?
+  variantId    Int?
+  itemDesc     String
+  quantity     Int     @default(1)
+  buyingPrice  Float?
+  sellingPrice Float?
+
+  order       Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product?        @relation(fields: [productId], references: [id])
+  variant     ProductVariant? @relation(fields: [variantId], references: [id])
+}
+
+// ─── Dispatch Batch ────────────────────────────────────────────────────────
+
+model DispatchBatch {
+  id                Int      @id @default(autoincrement())
+  totalShippingCost Float
+  perOrderShipping  Float
+  orderCount        Int
+  notes             String?
+  createdAt         DateTime @default(now())
+
+  batchOrders DispatchBatchOrder[]
+}
+
+model DispatchBatchOrder {
+  id      Int @id @default(autoincrement())
+  batchId Int
+  orderId Int
+
+  batch DispatchBatch @relation(fields: [batchId], references: [id])
+  order Order         @relation(fields: [orderId], references: [id])
+
+  @@unique([batchId, orderId])
+}
+
+// ─── Packaging Material ────────────────────────────────────────────────────
+
+model PackagingMaterial {
+  id           Int      @id @default(autoincrement())
+  name         String
+  currentStock Int      @default(0)
+  perUnitCost  Float    @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  purchases PackagingPurchase[]
+  usages    PackagingUsage[]
+}
+
+model PackagingPurchase {
+  id           Int      @id @default(autoincrement())
+  materialId   Int
+  qtyPurchased Int
+  totalCost    Float
+  perUnitCost  Float
+  purchasedAt  DateTime @default(now())
+
+  material PackagingMaterial @relation(fields: [materialId], references: [id])
+}
+
+model PackagingUsage {
+  id          Int      @id @default(autoincrement())
+  materialId  Int
+  orderId     Int
+  qtyUsed     Int
+  costPerUnit Float
+  totalCost   Float
+  usedAt      DateTime @default(now())
+
+  material PackagingMaterial @relation(fields: [materialId], references: [id])
+  order    Order             @relation(fields: [orderId], references: [id])
+}
+
+// ─── Expenses ──────────────────────────────────────────────────────────────
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  description String
+  amount      Float
+  category    String   @default("Other")
+  expenseDate DateTime @default(now())
+  createdAt   DateTime @default(now())
+}
