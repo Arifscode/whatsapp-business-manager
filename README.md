@@ -85,10 +85,57 @@ npm run dev
 | `VITE_API_URL` | Backend API URL (e.g. `http://localhost:3001`) |
 | `VITE_ORDER_FORM_URL` | Public order form URL shown in WhatsApp messages |
 
+## Authentication
+
+The operator app is password-protected. The customer order form (`/order`) is public.
+
+**Default dev password:** `admin` (only works when `OPERATOR_PASSWORD_HASH` is not set)
+
+**Set a real password for production:**
+```bash
+cd server
+node scripts/generate-hash.js YourChosenPassword
+# Copy the hash output → set as OPERATOR_PASSWORD_HASH env var
+```
+
 ## Deployment
 
-- **Backend**: Deploy to [Railway](https://railway.app) — supports SQLite with persistent volumes
-- **Frontend**: Deploy to [Vercel](https://vercel.com) — free tier, auto-deploys from GitHub
+### Backend — Railway
+
+1. Go to [railway.app](https://railway.app) and create a new project
+2. Connect your GitHub repo, select the `server` folder as root
+3. Add a **Volume** mounted at `/app/prisma` for SQLite persistence
+4. Set these environment variables in Railway:
+
+| Variable | Value |
+|---|---|
+| `DATABASE_URL` | `file:/app/prisma/prod.db` |
+| `JWT_SECRET` | a long random string (e.g. generate with `openssl rand -hex 32`) |
+| `OPERATOR_PASSWORD_HASH` | output of `node scripts/generate-hash.js yourpassword` |
+| `CLIENT_URL` | your Vercel frontend URL (set after deploying frontend) |
+| `CLOUDINARY_CLOUD_NAME` | from cloudinary.com free account |
+| `CLOUDINARY_API_KEY` | from cloudinary.com |
+| `CLOUDINARY_API_SECRET` | from cloudinary.com |
+| `PORT` | `3001` (Railway sets this automatically) |
+
+5. After deploy, run the DB migration once via Railway shell:
+   ```bash
+   npx prisma migrate deploy --schema prisma/schema.prisma
+   node prisma/seed.js
+   ```
+
+### Frontend — Vercel
+
+1. Go to [vercel.com](https://vercel.com) and import your GitHub repo
+2. Set **Root Directory** to `client`
+3. Set these environment variables in Vercel:
+
+| Variable | Value |
+|---|---|
+| `VITE_API_URL` | your Railway backend URL (e.g. `https://your-app.railway.app`) |
+| `VITE_ORDER_FORM_URL` | your Vercel URL + `/order` (e.g. `https://your-app.vercel.app/order`) |
+
+4. Deploy — Vercel auto-deploys on every push to `main`
 
 ## Version History
 

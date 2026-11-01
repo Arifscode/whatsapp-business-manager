@@ -1,54 +1,14 @@
 const express = require('express');
-const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 const VALID_STATUSES = ['PENDING', 'CONFIRMED', 'DISPATCHED', 'DELIVERED', 'CANCELLED'];
 
-// GET /api/orders
-router.get('/', async (req, res) => {
-  try {
-    const { status, source } = req.query;
-    const where = {};
-    if (status) where.status = status;
-    if (source) where.source = source;
+// ─── Public router (no auth) ────────────────────────────────────────────────
+const publicRouter = express.Router();
 
-    const orders = await prisma.order.findMany({
-      where,
-      include: {
-        items: { include: { product: true, variant: true } },
-        packagingUsages: { include: { material: true } },
-        batchOrders: { include: { batch: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    res.json(orders);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// GET /api/orders/:id
-router.get('/:id', async (req, res) => {
-  try {
-    const order = await prisma.order.findUnique({
-      where: { id: parseInt(req.params.id) },
-      include: {
-        items: { include: { product: true, variant: true } },
-        packagingUsages: { include: { material: true } },
-        batchOrders: { include: { batch: true } },
-      },
-    });
-    if (!order) return res.status(404).json({ error: 'Order not found' });
-    res.json(order);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// POST /api/orders/public  — no auth required, used by customer order form
-router.post('/public', async (req, res) => {
+// POST /api/orders/public  — customer order form submission
+publicRouter.post('/', async (req, res) => {
   try {
     const { customerName, customerPhone, itemDesc, quantity, deliveryAddress, notes } = req.body;
 
@@ -85,13 +45,55 @@ router.post('/public', async (req, res) => {
   }
 });
 
-// POST /api/orders  — manual entry by operator
-router.post('/', async (req, res) => {
+// ─── Protected router (requires auth middleware in index.js) ─────────────────
+const protectedRouter = express.Router();
+
+// GET /api/orders
+protectedRouter.get('/', async (req, res) => {
   try {
-    const {
-      customerName, customerPhone, deliveryAddress,
-      notes, internalNotes, items,
-    } = req.body;
+    const { status, source } = req.query;
+    const where = {};
+    if (status) where.status = status;
+    if (source) where.source = source;
+
+    const orders = await prisma.order.findMany({
+      where,
+      include: {
+        items: { include: { product: true, variant: true } },
+        packagingUsages: { include: { material: true } },
+        batchOrders: { include: { batch: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/orders/:id
+protectedRouter.get('/:id', async (req, res) => {
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: parseInt(req.params.id) },
+      include: {
+        items: { include: { product: true, variant: true } },
+        packagingUsages: { include: { material: true } },
+        batchOrders: { include: { batch: true } },
+      },
+    });
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/orders  — manual entry by operator
+protectedRouter.post('/', async (req, res) => {
+  try {
+    const { customerName, customerPhone, deliveryAddress, notes, internalNotes, items } = req.body;
 
     if (!customerName || !customerPhone || !deliveryAddress) {
       return res.status(400).json({ error: 'Name, phone, and address are required' });
@@ -129,7 +131,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/orders/:id/status
-router.put('/:id/status', async (req, res) => {
+protectedRouter.put('/:id/status', async (req, res) => {
   try {
     const { status } = req.body;
     if (!VALID_STATUSES.includes(status)) {
@@ -149,7 +151,7 @@ router.put('/:id/status', async (req, res) => {
 });
 
 // PUT /api/orders/:id
-router.put('/:id', async (req, res) => {
+protectedRouter.put('/:id', async (req, res) => {
   try {
     const { customerName, customerPhone, deliveryAddress, notes, internalNotes } = req.body;
 
@@ -171,4 +173,4 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = { publicRouter, protectedRouter };
