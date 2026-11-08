@@ -3,18 +3,14 @@
   "version": "1.0.0",
   "description": "WhatsApp Small Business Manager - ladies accessories shop management",
   "private": true,
-  "workspaces": [
-    "server",
-    "client"
-  ],
   "scripts": {
-    "dev": "concurrently \"npm run dev --workspace=server\" \"npm run dev --workspace=client\"",
-    "dev:server": "npm run dev --workspace=server",
-    "dev:client": "npm run dev --workspace=client",
-    "build": "npm run build --workspace=client",
-    "seed": "npm run seed --workspace=server",
-    "db:migrate": "npm run db:migrate --workspace=server",
-    "db:generate": "npm run db:generate --workspace=server"
+    "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm run dev\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "build": "cd client && npm run build",
+    "seed": "cd server && npm run seed",
+    "db:migrate": "cd server && npm run db:migrate",
+    "db:generate": "cd server && npm run db:generate"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
