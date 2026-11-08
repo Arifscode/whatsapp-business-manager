@@ -7,6 +7,7 @@ healthCheckPath = "/api/health"
 healthCheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
+preDeployCommand = "npx prisma migrate deploy"
 
 [[services]]
 name = "client"
