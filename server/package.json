@@ -9,7 +9,8 @@
     "seed": "node prisma/seed.js",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "generate-hash": "node scripts/generate-hash.js"
   },
   "prisma": {
     "schema": "prisma/schema.prisma"

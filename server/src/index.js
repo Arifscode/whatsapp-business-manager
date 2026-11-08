@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const auth = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -13,16 +14,21 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ─── Routes ─────────────────────────────────────────────────────────────────
+// ─── Public routes (no auth required) ───────────────────────────────────────
 app.use('/api/health', require('./routes/health'));
-app.use('/api/products', require('./routes/products'));
-app.use('/api/orders', require('./routes/orders'));
-app.use('/api/packaging', require('./routes/packaging'));
-app.use('/api/dispatch', require('./routes/dispatch'));
-app.use('/api/financials', require('./routes/financials'));
-app.use('/api/expenses', require('./routes/expenses'));
-app.use('/api/upload', require('./routes/upload'));
 app.use('/api/auth', require('./routes/auth'));
+
+// Public order submission — customers use this without logging in
+app.use('/api/orders/public', require('./routes/orders').publicRouter);
+
+// ─── Protected routes (JWT required) ────────────────────────────────────────
+app.use('/api/products',   auth, require('./routes/products'));
+app.use('/api/orders',     auth, require('./routes/orders').protectedRouter);
+app.use('/api/packaging',  auth, require('./routes/packaging'));
+app.use('/api/dispatch',   auth, require('./routes/dispatch'));
+app.use('/api/financials', auth, require('./routes/financials'));
+app.use('/api/expenses',   auth, require('./routes/expenses'));
+app.use('/api/upload',     auth, require('./routes/upload'));
 
 // ─── 404 handler ────────────────────────────────────────────────────────────
 app.use((req, res) => {
@@ -38,6 +44,8 @@ app.use((err, req, res, next) => {
 // ─── Start ──────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
+  console.log(`   Public order form API: /api/orders/public`);
+  console.log(`   Protected API requires Bearer token`);
 });
 
 module.exports = app;
