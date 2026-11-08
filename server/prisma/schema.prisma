@@ -1,12 +1,12 @@
 // WhatsApp Business Manager - Prisma Schema
-// SQLite database for simple local/hosted deployment
+// PostgreSQL database for production deployment
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
